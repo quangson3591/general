@@ -1,0 +1,132 @@
+{
+    "name": "SYNAPSE PAUSE",
+    "properties": {
+        "activities": [
+            {
+                "name": "Get synapse status",
+                "type": "WebActivity",
+                "dependsOn": [],
+                "policy": {
+                    "timeout": "0.12:00:00",
+                    "retry": 0,
+                    "retryIntervalInSeconds": 30,
+                    "secureOutput": false,
+                    "secureInput": false
+                },
+                "userProperties": [],
+                "typeProperties": {
+                    "url": {
+                        "value": "@concat('https://management.azure.com/subscriptions/',pipeline().parameters.subscriptionId,'/resourceGroups/',pipeline().parameters.resourceGroupName,'/providers/Microsoft.Synapse/workspaces/',pipeline().parameters.workspaceName,'/sqlPools/',pipeline().parameters.sqlPoolName,'?api-version=',pipeline().parameters.apiversion)",
+                        "type": "Expression"
+                    },
+                    "connectVia": {
+                        "referenceName": "onpremshir",
+                        "type": "IntegrationRuntimeReference"
+                    },
+                    "method": "GET",
+                    "authentication": {
+                        "type": "MSI",
+                        "resource": "https://management.core.windows.net/"
+                    }
+                }
+            },
+            {
+                "name": "Wait 5 seconds",
+                "type": "Wait",
+                "dependsOn": [
+                    {
+                        "activity": "Get synapse status",
+                        "dependencyConditions": [
+                            "Succeeded"
+                        ]
+                    }
+                ],
+                "userProperties": [],
+                "typeProperties": {
+                    "waitTimeInSeconds": 5
+                }
+            },
+            {
+                "name": "If Condition",
+                "type": "IfCondition",
+                "dependsOn": [
+                    {
+                        "activity": "Wait 5 seconds",
+                        "dependencyConditions": [
+                            "Succeeded"
+                        ]
+                    }
+                ],
+                "userProperties": [],
+                "typeProperties": {
+                    "expression": {
+                        "value": "@equals(activity('Get synapse status').output.properties.status,'Online')\n",
+                        "type": "Expression"
+                    },
+                    "ifTrueActivities": [
+                        {
+                            "name": "Pause Synapse",
+                            "type": "WebActivity",
+                            "dependsOn": [],
+                            "policy": {
+                                "timeout": "0.12:00:00",
+                                "retry": 0,
+                                "retryIntervalInSeconds": 30,
+                                "secureOutput": false,
+                                "secureInput": false
+                            },
+                            "userProperties": [],
+                            "typeProperties": {
+                                "url": {
+                                    "value": "@concat('https://management.azure.com/subscriptions/',pipeline().parameters.subscriptionId,'/resourceGroups/',pipeline().parameters.resourceGroupName,'/providers/Microsoft.Synapse/workspaces/',pipeline().parameters.workspaceName,'/sqlPools/',pipeline().parameters.sqlPoolName,'/pause?api-version=',pipeline().parameters.apiversion)",
+                                    "type": "Expression"
+                                },
+                                "connectVia": {
+                                    "referenceName": "onpremshir",
+                                    "type": "IntegrationRuntimeReference"
+                                },
+                                "method": "POST",
+                                "body": {
+                                    "value": "@null",
+                                    "type": "Expression"
+                                },
+                                "authentication": {
+                                    "type": "MSI",
+                                    "resource": "https://management.core.windows.net/"
+                                }
+                            }
+                        }
+                    ]
+                }
+            }
+        ],
+        "parameters": {
+            "resourceGroupName": {
+                "type": "string",
+                "defaultValue": "rg-ksldp-dev-sea"
+            },
+            "sqlPoolName": {
+                "type": "string",
+                "defaultValue": "ddplksldp"
+            },
+            "subscriptionId": {
+                "type": "string",
+                "defaultValue": "c321c25c-176b-4c37-9a73-a466548eded1"
+            },
+            "workspaceName": {
+                "type": "string",
+                "defaultValue": "syn-ksldp-dev-sea-2"
+            },
+            "apiversion": {
+                "type": "string",
+                "defaultValue": "2021-06-01"
+            }
+        },
+        "folder": {
+            "name": "0. Synapse"
+        },
+        "annotations": [],
+        "lastPublishTime": "2023-01-12T05:50:13Z"
+    },
+    "type": "Microsoft.Synapse/workspaces/pipelines"
+}
